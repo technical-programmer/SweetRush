@@ -68,7 +68,8 @@ user :
 
 
 
-I extensively leveraged AI tools throughout this project to streamline my workflow, accelerate development, and enhance the quality of the final product.The primary tools I used is Gemini
+I extensively leveraged AI tools throughout this project to streamline my workflow, accelerate development, and enhance the quality of the final product.The primary tools I used is Gemini and the main part where i used ai was when working on the authentication part
+
 
 
 
