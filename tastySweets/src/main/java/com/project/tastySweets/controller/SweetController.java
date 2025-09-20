@@ -2,22 +2,34 @@ package com.project.tastySweets.controller;
 
 import com.project.tastySweets.dto.SweetDto;
 import com.project.tastySweets.modal.Sweet;
+import com.project.tastySweets.service.FileService;
 import com.project.tastySweets.service.SweetService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/sweets")
 public class SweetController {
-
+    private final FileService fileService;
     private final SweetService sweetService;
 
-    public SweetController(SweetService sweetService) {
+    public SweetController(FileService fileService, SweetService sweetService) {
+        this.fileService = fileService;
         this.sweetService = sweetService;
+    }
+
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/upload-image")
+    public String uploadImage(@RequestParam("file") MultipartFile file) {
+        return fileService.save(file);
     }
 
     @PostMapping

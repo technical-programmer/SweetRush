@@ -6,6 +6,7 @@ import com.project.tastySweets.repository.RoleRepository;
 import com.project.tastySweets.repository.UserRepository;
 import com.project.tastySweets.security.JwtTokenProvider;
 import com.project.tastySweets.dto.LoginDto;
+import com.project.tastySweets.dto.LoginResponseDto; // Import the new DTO
 import com.project.tastySweets.dto.RegisterDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +20,12 @@ import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin("*")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -38,14 +39,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDto loginDto) {
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginDto loginDto) {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginDto.getUsername(), loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtTokenProvider.generateToken(authentication);
 
-        return new ResponseEntity<>(token, HttpStatus.OK);
+        // Return a structured JSON object
+        return new ResponseEntity<>(new LoginResponseDto(token), HttpStatus.OK);
     }
 
     @PostMapping("/register")
