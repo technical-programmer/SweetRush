@@ -200,8 +200,6 @@ const AdminPanel = () => {
 </td>
                             <td>{sweet.name}</td>
                             <td>{sweet.category}</td>
-                            <td>{import.meta.env.VITE_API_BASE_URL}</td>
-                            <td>{sweet.imageUrl}</td>
                             <td>${sweet.price}</td>
                             <td>
                                 <button onClick={() => handleEdit(sweet)}>Edit</button>
