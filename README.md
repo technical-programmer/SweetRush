@@ -58,8 +58,17 @@ spring.datasource.username=your-mysql-username
 spring.datasource.password=your-mysql-password
 spring.jpa.hibernate.ddl-auto=update
 
+
+<img width="1896" height="883" alt="image" src="https://github.com/user-attachments/assets/fc2b664a-4c75-40cb-ac6d-c8dbf6304596" />
+ admin :
+<img width="1899" height="939" alt="image" src="https://github.com/user-attachments/assets/8d8175dc-e2da-48fa-b740-75da9294c620" />
+user :
+<img width="1874" height="959" alt="image" src="https://github.com/user-attachments/assets/718d6050-090c-4894-a8a4-4d98714b2f0b" />
+
+
+
+
 I extensively leveraged AI tools throughout this project to streamline my workflow, accelerate development, and enhance the quality of the final product.The primary tools I used is Gemini
 
 
-1. Backend Setup
-Clone the repository:
+
