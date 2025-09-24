@@ -1,5 +1,6 @@
 package com.project.tastySweets.service;
 
+import org.springframework.beans.factory.annotation.Value; // Import the Value annotation
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -10,13 +11,14 @@ import java.util.UUID;
 
 @Service
 public class FileService {
-    private final Path root = Paths.get("uploads");
+    private final Path root;
 
-    public FileService() {
+    public FileService(@Value("${file.upload-dir}") String uploadDir) {
+        this.root = Paths.get(uploadDir);
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder for upload!");
+            throw new RuntimeException("Could not initialize folder for upload!", e);
         }
     }
 

@@ -55,8 +55,8 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Correctly add the /api/uploads/** endpoint to the list of public paths
-                        .requestMatchers("/", "/api/auth/**", "/api/sweets/search", "/api/uploads/**").permitAll()
+                        // Corrected path to permit access to the uploads directory
+                        .requestMatchers("/", "/api/auth/**", "/api/sweets/search", "/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
@@ -68,7 +68,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5175"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
