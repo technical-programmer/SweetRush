@@ -5,51 +5,79 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import Navbar from './components/Navbar.jsx';
+import CartPage from './pages/CartPage.jsx';
 import { createGlobalStyle } from 'styled-components';
-import { jwtDecode } from 'jwt-decode';
-
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import axiosInstance from './api/axiosInstance.jsx'; 
 const GlobalStyle = createGlobalStyle`
-  body {
-    font-family: 'Poppins', sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #F8F9FA;
-    color: #343A40;
-  }
-  h1, h2, h3 {
-    font-weight: 600;
-  }
+    body {
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #F8F9FA;
+        color: #343A40;
+    }
+    h1, h2, h3 {
+        font-weight: 600;
+    }
 `;
 
-const checkAdminRole = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        return false;
+const PrivateRoute = ({ children, isAdminRoute }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
-    try {
-        const decodedToken = jwtDecode(token);
-        return decodedToken.role === 'ROLE_ADMIN';
-    } catch (error) {
-        return false;
+
+    if (!user) {
+        return <Navigate to="/login" />;
     }
+    
+    if (isAdminRoute && !user.isAdmin) {
+        return <Navigate to="/" />;
+    }
+
+    return children;
 };
 
 const App = () => {
-    const isAdmin = checkAdminRole();
-
     return (
         <Router>
-            <GlobalStyle />
-            <Navbar />
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                    path="/admin"
-                    element={isAdmin ? <AdminPanel /> : <Navigate to="/login" />}
-                />
-                <Route path="/" element={<Dashboard />} />
-            </Routes>
+            <AuthProvider axiosInstance={axiosInstance}> {/* 👈 Pass it here */}
+                <GlobalStyle />
+                <Navbar />
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    
+                    <Route 
+                        path="/" 
+                        element={
+                            <PrivateRoute>
+                                <Dashboard />
+                            </PrivateRoute>
+                        } 
+                    />
+                    
+                    <Route 
+                        path="/cart" 
+                        element={
+                            <PrivateRoute>
+                                <CartPage />
+                            </PrivateRoute>
+                        } 
+                    />
+
+                    <Route
+                        path="/admin"
+                        element={
+                            <PrivateRoute isAdminRoute={true}>
+                                <AdminPanel />
+                            </PrivateRoute>
+                        }
+                    />
+                </Routes>
+            </AuthProvider>
         </Router>
     );
 };

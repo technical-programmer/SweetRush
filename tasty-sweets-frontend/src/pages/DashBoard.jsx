@@ -3,6 +3,8 @@ import axiosInstance from '../api/axiosInstance';
 import styled from 'styled-components';
 import SweetCard from '../components/SweetCard.jsx';
 import { useNavigate } from 'react-router-dom';
+import CartSidebar from '../components/CartSideBar.jsx';
+import { useAuth } from '../context/AuthContext.jsx'; // 👈 Get the user object from AuthContext
 
 const DashboardContainer = styled.div`
   padding: 40px;
@@ -43,6 +45,9 @@ const Dashboard = () => {
     const [sweets, setSweets] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [selectedSweet, setSelectedSweet] = useState(null);
+    const { user } = useAuth();
 
     const fetchSweets = async () => {
         try {
@@ -50,25 +55,53 @@ const Dashboard = () => {
             setSweets(response.data);
         } catch (error) {
             console.error('Failed to fetch sweets', error);
+            // Redirection logic is now handled by PrivateRoute
+        }
+    };
+
+    const handlePurchase = async (id, quantity = 1) => {
+        try {
+            await axiosInstance.post(`/sweets/${id}/purchase`, { quantity }); 
+            fetchSweets();
+            alert(`Successfully purchased ${quantity} item(s)!`);
+            if (isSidebarOpen) {
+                setIsSidebarOpen(false); 
+            }
+        } catch (error) {
+            console.error('Failed to purchase sweet', error);
+            // This is now handled by the error check in the catch block
             if (error.response?.status === 401) {
                 navigate('/login');
+            } else {
+                alert('Failed to purchase sweet.');
             }
         }
     };
 
-    const handlePurchase = async (id) => {
+    const handleAddToCart = async (sweet) => {
         try {
-            await axiosInstance.post(`/sweets/${id}/purchase`);
-            fetchSweets();
+            const quantity = 1;
+            await axiosInstance.post('/cart/add', { sweetId: sweet.id, quantity });
+            setSelectedSweet(sweet);
+            setIsSidebarOpen(true);
         } catch (error) {
-            console.error('Failed to purchase sweet', error);
-            alert('Failed to purchase sweet.');
+            console.error('Failed to add sweet to bag', error);
+            // This is now handled by the error check in the catch block
+            if (error.response?.status === 401) {
+                navigate('/login');
+            } else {
+                alert('Failed to add sweet to bag.');
+            }
         }
+    };
+
+    const handleCloseSidebar = () => {
+        setIsSidebarOpen(false);
     };
 
     useEffect(() => {
         fetchSweets();
-    }, [searchTerm]);
+    }, [searchTerm]); // 👈 Remove user from dependency array
 
     return (
         <DashboardContainer>
@@ -82,11 +115,23 @@ const Dashboard = () => {
                 />
             </SearchBar>
             <SweetList>
-                
                 {Array.isArray(sweets) && sweets.map((sweet) => (
-                    <SweetCard key={sweet.id} sweet={sweet} onPurchase={handlePurchase} />
+                    <SweetCard 
+                        key={sweet.id} 
+                        sweet={sweet} 
+                        onPurchase={handlePurchase}
+                        onAddToCart={() => handleAddToCart(sweet)} 
+                    />
                 ))}
             </SweetList>
+            
+            {isSidebarOpen && (
+                <CartSidebar 
+                    sweet={selectedSweet} 
+                    onClose={handleCloseSidebar}
+                    onPurchase={handlePurchase}
+                />
+            )}
         </DashboardContainer>
     );
 };

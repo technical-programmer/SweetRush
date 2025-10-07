@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { jwtDecode } from "jwt-decode"; 
+import { useAuth } from '../context/AuthContext';
+
 
 const FormContainer = styled.div`
   display: flex;
@@ -62,34 +61,14 @@ const Button = styled.button`
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
-        { username, password }
-      );
-
-      // This is the correct line to get the token from a JSON object
-      const token = res.data.token;
-      localStorage.setItem("token", token);
-
-      const decodedToken = jwtDecode(token);
-      const userRole = decodedToken.role;
-
-      if (userRole === "ROLE_ADMIN") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      await login(username, password);
     } catch (error) {
       console.error("Login failed:", error);
-      if (error.response) {
-        console.log("Server Status:", error.response.status);
-        console.log("Server Data:", error.response.data);
-      }
       alert("Login failed. Please check your credentials.");
     }
   };

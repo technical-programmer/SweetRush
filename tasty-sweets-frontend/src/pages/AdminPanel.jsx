@@ -1,112 +1,129 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import axiosInstance from '../api/axiosInstance';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const AdminPanelContainer = styled.div`
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 40px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  h2 {
-    text-align: center;
-    color: #343A40;
-    margin-bottom: 24px;
-  }
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 40px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    h2 {
+        text-align: center;
+        color: #343A40;
+        margin-bottom: 24px;
+    }
 `;
 
 const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-bottom: 40px;
-  input, button {
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #CED4DA;
-    font-size: 1rem;
-  }
-  input[type="file"] {
-    border: none;
-  }
-  button {
-    background-color: #A4538E;
-    color: #FFFFFF;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    transition: background-color 0.3s;
-    &:hover {
-      background-color: #8C4578;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 40px;
+    input, button {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #CED4DA;
+        font-size: 1rem;
     }
-    &.delete-btn {
-      background-color: #DC3545;
-      &:hover {
-        background-color: #C82333;
-      }
+    input[type="file"] {
+        border: none;
     }
-  }
+    button {
+        background-color: #A4538E;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: background-color 0.3s;
+        &:hover {
+            background-color: #8C4578;
+        }
+        &.delete-btn {
+            background-color: #DC3545;
+            &:hover {
+                background-color: #C82333;
+            }
+        }
+    }
 `;
 
 const SweetTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  th, td {
-    padding: 12px;
-    border: 1px solid #E9ECEF;
-    text-align: left;
-  }
-  th {
-    background-color: #F8F9FA;
-    font-weight: 600;
-  }
-  img {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 4px;
-  }
-  button {
-    background-color: #A4538E;
-    color: #FFFFFF;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    &:hover {
-      background-color: #8C4578;
+    width: 100%;
+    border-collapse: collapse;
+    th, td {
+        padding: 12px;
+        border: 1px solid #E9ECEF;
+        text-align: left;
     }
-    &.delete-btn {
-      background-color: #DC3545;
-      &:hover {
-        background-color: #C82333;
-      }
+    th {
+        background-color: #F8F9FA;
+        font-weight: 600;
     }
-  }
+    img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    button {
+        background-color: #A4538E;
+        color: #FFFFFF;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        &:hover {
+            background-color: #8C4578;
+        }
+        &.delete-btn {
+            background-color: #DC3545;
+            &:hover {
+                background-color: #C82333;
+            }
+        }
+    }
 `;
 
 const AdminPanel = () => {
     const [sweets, setSweets] = useState([]);
-    const [formState, setFormState] = useState({ id: null, name: '', category: '', price: 0, quantity: 0, imageUrl: '' });
+    const [formState, setFormState] = useState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
     const [imageFile, setImageFile] = useState(null);
+    const [localLoading, setLocalLoading] = useState(true);
+    const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
     const fetchSweets = async () => {
+        setLocalLoading(true);
         try {
             const response = await axiosInstance.get('/sweets');
             setSweets(response.data);
         } catch (error) {
             console.error('Failed to fetch sweets', error);
+            if (error.response?.status === 401) {
+                navigate('/login');
+            }
+        } finally {
+            setLocalLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchSweets();
-    }, []);
+        if (user) {
+            fetchSweets();
+        }
+    }, [user]);
 
     const handleFormChange = (e) => {
-        setFormState({ ...formState, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormState(prevState => ({
+            ...prevState,
+            [name]: name === 'price' || name === 'quantity' ? Number(value) : value,
+        }));
     };
 
     const handleFileChange = (e) => {
@@ -131,6 +148,7 @@ const AdminPanel = () => {
         }
 
         const sweetData = { ...formState, imageUrl: newImageUrl };
+        delete sweetData.id;
 
         try {
             if (formState.id) {
@@ -140,12 +158,15 @@ const AdminPanel = () => {
                 await axiosInstance.post('/sweets', sweetData);
                 alert('Sweet added successfully!');
             }
-            setFormState({ id: null, name: '', category: '', price: 0, quantity: 0, imageUrl: '' });
+            setFormState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
             setImageFile(null);
             fetchSweets();
         } catch (error) {
             console.error('Operation failed:', error);
             alert('Operation failed!');
+            if (error.response?.status === 401) {
+                navigate('/login');
+            }
         }
     };
 
@@ -162,9 +183,16 @@ const AdminPanel = () => {
             } catch (error) {
                 console.error('Delete failed:', error);
                 alert('Delete failed!');
+                if (error.response?.status === 401) {
+                    navigate('/login');
+                }
             }
         }
     };
+    
+    if (authLoading || localLoading) {
+        return <AdminPanelContainer><p>Loading sweets...</p></AdminPanelContainer>;
+    }
 
     return (
         <AdminPanelContainer>
@@ -192,12 +220,12 @@ const AdminPanel = () => {
                 <tbody>
                     {sweets.map(sweet => (
                         <tr key={sweet.id}>
-                            <td><img 
-  src={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}${sweet.imageUrl}`} 
-  alt={sweet.name} 
-/>
-
-</td>
+                            <td>
+                                <img 
+                                    src={sweet.imageUrl} 
+                                    alt={sweet.name} 
+                                />
+                            </td>
                             <td>{sweet.name}</td>
                             <td>{sweet.category}</td>
                             <td>${sweet.price}</td>

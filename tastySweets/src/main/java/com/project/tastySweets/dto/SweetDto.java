@@ -1,7 +1,9 @@
 package com.project.tastySweets.dto;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SweetDto {
     private Long id;
     private String name;

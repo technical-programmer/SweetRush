@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { jwtDecode } from 'jwt-decode';
+import { useAuth } from '../context/AuthContext.jsx'; // 👈 Import the useAuth hook
 
 const Nav = styled.nav`
   background-color: #ffffff;
@@ -94,41 +94,33 @@ const AuthButton = styled(Link)`
   }
 `;
 
+const LogoutButton = styled.button`
+  background-color: #A4538E;
+  color: #FFFFFF;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #8C4578;
+  }
+`;
+
 const Navbar = () => {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decodedToken = jwtDecode(token);
-        // The payload's roles field is an array of objects
-        // We need to check if one of those objects has a name of 'ROLE_ADMIN'
-        const roles = decodedToken.roles.map(role => role.authority);
-        setUser({
-          username: decodedToken.sub,
-          roles: roles,
-        });
-      } catch (error) {
-        localStorage.removeItem('token');
-        setUser(null);
-      }
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    navigate('/login');
-  };
-
+  // 👈 Access the user and logout function from the AuthContext
+  const { user, logout } = useAuth();
+  
   return (
     <Nav>
       <NavBrand to="/">SweetRush</NavBrand>
       <NavLinks>
         <NavButton as={Link} to="/">Home</NavButton>
-        {user?.roles?.includes('ROLE_ADMIN') && (
+        {user?.isAdmin && (
           <NavButton as={Link} to="/admin">Admin Panel</NavButton>
         )}
       </NavLinks>
@@ -136,7 +128,8 @@ const Navbar = () => {
         {user ? (
           <>
             <WelcomeMessage>Welcome, {user.username}!</WelcomeMessage>
-            <AuthButton onClick={handleLogout}>Logout</AuthButton>
+            {/* 👈 Use the logout function from the context */}
+            <LogoutButton onClick={logout}>Logout</LogoutButton>
           </>
         ) : (
           <>

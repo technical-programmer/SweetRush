@@ -49,13 +49,11 @@ public class AuthController {
         // Return a structured JSON object
         return new ResponseEntity<>(new LoginResponseDto(token), HttpStatus.OK);
     }
-
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
         if (userRepository.existsByUsername(registerDto.getUsername())) {
             return new ResponseEntity<>("Username is already taken!", HttpStatus.BAD_REQUEST);
         }
-
         User user = new User();
         user.setUsername(registerDto.getUsername());
         user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
