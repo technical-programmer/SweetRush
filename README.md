@@ -63,7 +63,7 @@ spring.jpa.hibernate.ddl-auto=update
  admin :
 <img width="1899" height="939" alt="image" src="https://github.com/user-attachments/assets/8d8175dc-e2da-48fa-b740-75da9294c620" />
 user :
-<img width="1874" height="959" alt="image" src="https://github.com/user-attachments/assets/718d6050-090c-4894-a8a4-4d98714b2f0b" />
+<img width="1903" height="893" alt="image" src="https://github.com/user-attachments/assets/0ebe0ce5-13b4-43a5-aed4-fcb13290494f" />
 
 
 
