@@ -5,10 +5,13 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import Navbar from './components/Navbar.jsx';
+import Footer from './components/Footer.jsx';
 import CartPage from './pages/CartPage.jsx';
 import { createGlobalStyle } from 'styled-components';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
-import axiosInstance from './api/axiosInstance.jsx'; 
+import axiosInstance from './api/axiosInstance.jsx';
+import styled from 'styled-components';
+
 const GlobalStyle = createGlobalStyle`
     body {
         font-family: 'Poppins', sans-serif;
@@ -20,6 +23,17 @@ const GlobalStyle = createGlobalStyle`
     h1, h2, h3 {
         font-weight: 600;
     }
+`;
+
+// Wrapper to ensure footer stays at bottom
+const AppWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+`;
+
+const MainContent = styled.main`
+    flex: 1;
 `;
 
 const PrivateRoute = ({ children, isAdminRoute }) => {
@@ -43,40 +57,45 @@ const PrivateRoute = ({ children, isAdminRoute }) => {
 const App = () => {
     return (
         <Router>
-            <AuthProvider axiosInstance={axiosInstance}> {/* 👈 Pass it here */}
+            <AuthProvider axiosInstance={axiosInstance}>
                 <GlobalStyle />
-                <Navbar />
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    
-                    <Route 
-                        path="/" 
-                        element={
-                            <PrivateRoute>
-                                <Dashboard />
-                            </PrivateRoute>
-                        } 
-                    />
-                    
-                    <Route 
-                        path="/cart" 
-                        element={
-                            <PrivateRoute>
-                                <CartPage />
-                            </PrivateRoute>
-                        } 
-                    />
+                <AppWrapper>
+                    <Navbar />
+                    <MainContent>
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            
+                            <Route 
+                                path="/" 
+                                element={
+                                    <PrivateRoute>
+                                        <Dashboard />
+                                    </PrivateRoute>
+                                } 
+                            />
+                            
+                            <Route 
+                                path="/cart" 
+                                element={
+                                    <PrivateRoute>
+                                        <CartPage />
+                                    </PrivateRoute>
+                                } 
+                            />
 
-                    <Route
-                        path="/admin"
-                        element={
-                            <PrivateRoute isAdminRoute={true}>
-                                <AdminPanel />
-                            </PrivateRoute>
-                        }
-                    />
-                </Routes>
+                            <Route
+                                path="/admin"
+                                element={
+                                    <PrivateRoute isAdminRoute={true}>
+                                        <AdminPanel />
+                                    </PrivateRoute>
+                                }
+                            />
+                        </Routes>
+                    </MainContent>
+                    <Footer />
+                </AppWrapper>
             </AuthProvider>
         </Router>
     );

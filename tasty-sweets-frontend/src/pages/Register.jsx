@@ -1,92 +1,171 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
 
 const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #FFD1DC 0%, #B0E0E6 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: #ffffff;
+
+  animation: fadeIn 0.8s ease;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 `;
 
 const FormBox = styled.div`
-  background: #FFFFFF;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
-  text-align: center;
+  max-width: 440px;
+  padding: 45px 40px;
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+
+  border-radius: 22px;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.10),
+    0 8px 18px rgba(0, 0, 0, 0.06);
+  
+  animation: slideUp 0.8s ease;
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(25px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  transition: 0.3s ease;
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow:
+      0 28px 55px rgba(0, 0, 0, 0.18),
+      0 10px 25px rgba(0, 0, 0, 0.08);
+  }
 `;
 
 const Title = styled.h2`
-  color: #343A40;
-  margin-bottom: 24px;
+  text-align: center;
+  color: #3f3f3f;
+  font-weight: 800;
+  font-size: 1.9rem;
+  margin-bottom: 30px;
+
+  animation: fadeDown 0.7s ease;
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 12px;
+  padding: 15px;
   margin-bottom: 20px;
-  border: 1px solid #CED4DA;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
+
+  border-radius: 12px;
+  border: 1.4px solid #d7d7d7;
+  background: #fafafa;
+
+  font-size: 1.02rem;
+
+  transition: 0.25s ease;
+
   &:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.25);
+    border-color: #8c5eff;
+    box-shadow: 0 0 12px rgba(140, 94, 255, 0.25);
     outline: none;
+    background: #fff;
+  }
+
+  &:hover {
+    border-color: #b389ff;
   }
 `;
 
 const Button = styled.button`
   width: 100%;
-  padding: 12px;
+  padding: 15px;
+  margin-top: 10px;
+
+  background: linear-gradient(135deg, #9b4dff, #6a4fff);
+  color: white;
+
   border: none;
-  border-radius: 8px;
-  background-color: #4CAF50;
-  color: #FFFFFF;
-  font-size: 1.1rem;
+  border-radius: 12px;
+
+  font-size: 1.15rem;
   font-weight: 600;
+  letter-spacing: 0.5px;
+
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: 0.25s ease;
+
+  animation: popIn 0.9s ease;
+  @keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
   &:hover {
-    background-color: #45A049;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 25px rgba(128, 82, 255, 0.3);
+  }
+
+  &:active {
+    transform: scale(0.97);
   }
 `;
 
 const Register = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        try {
-            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/register`, { username, password });
-            alert('Registration successful! Please log in.');
-            navigate('/login');
-        } catch (error) {
-            console.error('Registration failed:', error);
-            alert('Registration failed. Username might be taken.');
-        }
-    };
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/register`, {
+        username,
+        password,
+      });
 
-    return (
-        <FormContainer>
-            <FormBox>
-                <Title>Create an Account</Title>
-                <form onSubmit={handleRegister}>
-                    <Input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                    <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <Button type="submit">Register</Button>
-                </form>
-            </FormBox>
-        </FormContainer>
-    );
+      alert("Registration successful! Please log in.");
+      navigate("/login");
+    } catch (error) {
+      console.error("Registration failed:", error);
+      alert("Registration failed. Username may be taken.");
+    }
+  };
+
+  return (
+    <FormContainer>
+      <FormBox>
+        <Title>Create Account</Title>
+
+        <form onSubmit={handleRegister}>
+          <Input
+            type="text"
+            placeholder="Enter Username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <Input
+            type="password"
+            placeholder="Enter Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <Button type="submit">Register</Button>
+        </form>
+      </FormBox>
+    </FormContainer>
+  );
 };
 
 export default Register;

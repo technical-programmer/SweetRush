@@ -1,90 +1,358 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
+const fadeIn = keyframes`
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+`;
+
 const AdminPanelContainer = styled.div`
-    max-width: 900px;
+    max-width: 1200px;
     margin: 40px auto;
+    padding: 40px 20px;
+    animation: ${fadeIn} 0.6s ease;
+`;
+
+const Header = styled.div`
+    text-align: center;
+    margin-bottom: 50px;
+    
+    h1 {
+        font-size: 3rem;
+        background: linear-gradient(135deg, #A4538E, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 10px;
+        font-weight: 800;
+    }
+    
+    p {
+        color: #7F8C8D;
+        font-size: 1.1rem;
+    }
+`;
+
+const FormSection = styled.div`
+    background: white;
+    border-radius: 20px;
     padding: 40px;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    
     h2 {
-        text-align: center;
-        color: #343A40;
-        margin-bottom: 24px;
+        font-size: 1.8rem;
+        color: #2C3E50;
+        margin: 0 0 30px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        
+        &::before {
+            content: '📝';
+            font-size: 2rem;
+        }
     }
 `;
 
 const Form = styled.form`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+const InputGroup = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-bottom: 40px;
-    input, button {
-        padding: 12px;
-        border-radius: 8px;
-        border: 1px solid #CED4DA;
-        font-size: 1rem;
+    gap: 8px;
+`;
+
+const Label = styled.label`
+    font-weight: 600;
+    color: #2C3E50;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+`;
+
+const Input = styled.input`
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid #E9ECEF;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #F8F9FA;
+    
+    &:focus {
+        outline: none;
+        border-color: #A4538E;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(164, 83, 142, 0.1);
     }
-    input[type="file"] {
-        border: none;
+    
+    &::placeholder {
+        color: #ADB5BD;
     }
-    button {
-        background-color: #A4538E;
-        color: #FFFFFF;
-        cursor: pointer;
-        font-size: 1.1rem;
-        font-weight: 600;
-        transition: background-color 0.3s;
-        &:hover {
-            background-color: #8C4578;
+`;
+
+const FileInputWrapper = styled.div`
+    position: relative;
+    grid-column: 1 / -1;
+`;
+
+const FileInput = styled.input`
+    display: none;
+`;
+
+const FileLabel = styled.label`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px dashed #A4538E;
+    background: linear-gradient(135deg, rgba(164, 83, 142, 0.05), rgba(118, 75, 162, 0.05));
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: #A4538E;
+    
+    &:hover {
+        background: linear-gradient(135deg, rgba(164, 83, 142, 0.1), rgba(118, 75, 162, 0.1));
+        border-color: #764ba2;
+    }
+    
+    &::before {
+        content: '📁';
+        font-size: 1.5rem;
+    }
+`;
+
+const FileName = styled.span`
+    color: #6C757D;
+    font-size: 0.9rem;
+    margin-top: 8px;
+    display: block;
+`;
+
+const SubmitButton = styled.button`
+    grid-column: 1 / -1;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #A4538E, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(164, 83, 142, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(164, 83, 142, 0.4);
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+`;
+
+const TableSection = styled.div`
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    
+    h2 {
+        font-size: 1.8rem;
+        color: #2C3E50;
+        margin: 0 0 30px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        
+        &::before {
+            content: '🍬';
+            font-size: 2rem;
         }
-        &.delete-btn {
-            background-color: #DC3545;
-            &:hover {
-                background-color: #C82333;
-            }
-        }
     }
+`;
+
+const TableWrapper = styled.div`
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 `;
 
 const SweetTable = styled.table`
     width: 100%;
     border-collapse: collapse;
-    th, td {
-        padding: 12px;
-        border: 1px solid #E9ECEF;
-        text-align: left;
-    }
-    th {
-        background-color: #F8F9FA;
-        font-weight: 600;
-    }
-    img {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 4px;
-    }
-    button {
-        background-color: #A4538E;
-        color: #FFFFFF;
-        padding: 8px 12px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        &:hover {
-            background-color: #8C4578;
+    background: white;
+    
+    thead {
+        background: linear-gradient(135deg, #A4538E, #764ba2);
+        
+        th {
+            padding: 18px 16px;
+            text-align: left;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
         }
-        &.delete-btn {
-            background-color: #DC3545;
+    }
+    
+    tbody {
+        tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #F0F0F0;
+            
             &:hover {
-                background-color: #C82333;
+                background: linear-gradient(135deg, rgba(164, 83, 142, 0.03), rgba(118, 75, 162, 0.03));
+                transform: scale(1.01);
+            }
+            
+            &:last-child {
+                border-bottom: none;
             }
         }
+        
+        td {
+            padding: 16px;
+            color: #2C3E50;
+            font-weight: 500;
+        }
+    }
+`;
+
+const ImageCell = styled.td`
+    img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        
+        &:hover {
+            transform: scale(1.1);
+        }
+    }
+`;
+
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+`;
+
+const ActionButton = styled.button`
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    
+    &.edit-btn {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+    }
+    
+    &.delete-btn {
+        background: linear-gradient(135deg, #E74C3C, #C0392B);
+        color: white;
+        box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+        }
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+`;
+
+const PriceTag = styled.span`
+    background: linear-gradient(135deg, rgba(164, 83, 142, 0.1), rgba(118, 75, 162, 0.1));
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    color: #A4538E;
+    display: inline-block;
+`;
+
+const CategoryBadge = styled.span`
+    background: linear-gradient(135deg, #4CAF50, #45A049);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+`;
+
+const LoadingMessage = styled.div`
+    text-align: center;
+    padding: 60px;
+    font-size: 1.2rem;
+    color: #7F8C8D;
+    
+    &::before {
+        content: '⏳';
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 20px;
+    }
+`;
+
+const EmptyState = styled.div`
+    text-align: center;
+    padding: 60px;
+    color: #7F8C8D;
+    
+    &::before {
+        content: '🍭';
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 20px;
+    }
+    
+    p {
+        font-size: 1.2rem;
+        margin: 0;
     }
 `;
 
@@ -95,7 +363,7 @@ const AdminPanel = () => {
     const [localLoading, setLocalLoading] = useState(true);
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    const apiUrl = import.meta.env.VITE_API_BASE_URL;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
 
     const fetchSweets = async () => {
         setLocalLoading(true);
@@ -153,17 +421,17 @@ const AdminPanel = () => {
         try {
             if (formState.id) {
                 await axiosInstance.put(`/sweets/${formState.id}`, sweetData);
-                alert('Sweet updated successfully!');
+                alert('Sweet updated successfully! ✅');
             } else {
                 await axiosInstance.post('/sweets', sweetData);
-                alert('Sweet added successfully!');
+                alert('Sweet added successfully! ✅');
             }
             setFormState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
             setImageFile(null);
             fetchSweets();
         } catch (error) {
             console.error('Operation failed:', error);
-            alert('Operation failed!');
+            alert('Operation failed! ❌');
             if (error.response?.status === 401) {
                 navigate('/login');
             }
@@ -172,17 +440,18 @@ const AdminPanel = () => {
 
     const handleEdit = (sweet) => {
         setFormState({ ...sweet });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this sweet?')) {
+        if (window.confirm('Are you sure you want to delete this sweet? 🗑️')) {
             try {
                 await axiosInstance.delete(`/sweets/${id}`);
-                alert('Sweet deleted successfully!');
+                alert('Sweet deleted successfully! ✅');
                 fetchSweets();
             } catch (error) {
                 console.error('Delete failed:', error);
-                alert('Delete failed!');
+                alert('Delete failed! ❌');
                 if (error.response?.status === 401) {
                     navigate('/login');
                 }
@@ -191,52 +460,145 @@ const AdminPanel = () => {
     };
     
     if (authLoading || localLoading) {
-        return <AdminPanelContainer><p>Loading sweets...</p></AdminPanelContainer>;
+        return (
+            <AdminPanelContainer>
+                <LoadingMessage>Loading Admin Panel...</LoadingMessage>
+            </AdminPanelContainer>
+        );
     }
 
     return (
         <AdminPanelContainer>
-            <h2>{formState.id ? 'Edit Sweet' : 'Add New Sweet'}</h2>
-            <Form onSubmit={handleFormSubmit}>
-                <input type="text" name="name" placeholder="Name" value={formState.name} onChange={handleFormChange} required />
-                <input type="text" name="category" placeholder="Category" value={formState.category} onChange={handleFormChange} required />
-                <input type="number" name="price" placeholder="Price" value={formState.price} onChange={handleFormChange} required />
-                <input type="number" name="quantity" placeholder="Quantity" value={formState.quantity} onChange={handleFormChange} required />
-                <input type="file" onChange={handleFileChange} />
-                <button type="submit">{formState.id ? 'Update Sweet' : 'Add Sweet'}</button>
-            </Form>
+            <Header>
+                <h1>🎯 Admin Dashboard</h1>
+                <p>Manage your sweet inventory with ease</p>
+            </Header>
+
+            <FormSection>
+                <h2>{formState.id ? 'Edit Sweet' : 'Add New Sweet'}</h2>
+                <Form onSubmit={handleFormSubmit}>
+                    <InputGroup>
+                        <Label>🍬 Sweet Name</Label>
+                        <Input 
+                            type="text" 
+                            name="name" 
+                            placeholder="e.g., Gulab Jamun" 
+                            value={formState.name} 
+                            onChange={handleFormChange} 
+                            required 
+                        />
+                    </InputGroup>
+                    
+                    <InputGroup>
+                        <Label>📂 Category</Label>
+                        <Input 
+                            type="text" 
+                            name="category" 
+                            placeholder="e.g., Dessert" 
+                            value={formState.category} 
+                            onChange={handleFormChange} 
+                            required 
+                        />
+                    </InputGroup>
+                    
+                    <InputGroup>
+                        <Label>💰 Price (₹)</Label>
+                        <Input 
+                            type="number" 
+                            name="price" 
+                            placeholder="100" 
+                            value={formState.price} 
+                            onChange={handleFormChange} 
+                            required 
+                            min="0"
+                            step="0.01"
+                        />
+                    </InputGroup>
+                    
+                    <InputGroup>
+                        <Label>📦 Quantity</Label>
+                        <Input 
+                            type="number" 
+                            name="quantity" 
+                            placeholder="50" 
+                            value={formState.quantity} 
+                            onChange={handleFormChange} 
+                            required 
+                            min="0"
+                        />
+                    </InputGroup>
+                    
+                    <FileInputWrapper>
+                        <FileInput 
+                            type="file" 
+                            id="file-upload"
+                            onChange={handleFileChange}
+                            accept="image/*"
+                        />
+                        <FileLabel htmlFor="file-upload">
+                            {imageFile ? imageFile.name : 'Choose Image File'}
+                        </FileLabel>
+                        {imageFile && <FileName>✅ {imageFile.name}</FileName>}
+                    </FileInputWrapper>
+                    
+                    <SubmitButton type="submit">
+                        {formState.id ? '✏️ Update Sweet' : '➕ Add Sweet'}
+                    </SubmitButton>
+                </Form>
+            </FormSection>
             
-            <h2>Manage Sweets</h2>
-            <SweetTable>
-                <thead>
-                    <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sweets.map(sweet => (
-                        <tr key={sweet.id}>
-                            <td>
-                                <img 
-                                    src={sweet.imageUrl} 
-                                    alt={sweet.name} 
-                                />
-                            </td>
-                            <td>{sweet.name}</td>
-                            <td>{sweet.category}</td>
-                            <td>${sweet.price}</td>
-                            <td>
-                                <button onClick={() => handleEdit(sweet)}>Edit</button>
-                                <button className="delete-btn" onClick={() => handleDelete(sweet.id)}>Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </SweetTable>
+            <TableSection>
+                <h2>Manage Sweets</h2>
+                {sweets.length === 0 ? (
+                    <EmptyState>
+                        <p>No sweets available. Add your first sweet above!</p>
+                    </EmptyState>
+                ) : (
+                    <TableWrapper>
+                        <SweetTable>
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sweets.map(sweet => (
+                                    <tr key={sweet.id}>
+                                        <ImageCell>
+                                            <img 
+                                                src={`${baseUrl}${sweet.imageUrl}`} 
+                                                alt={sweet.name}
+                                                onError={(e) => {
+                                                    e.target.src = '/placeholder-sweet.png';
+                                                }}
+                                            />
+                                        </ImageCell>
+                                        <td>{sweet.name}</td>
+                                        <td><CategoryBadge>{sweet.category}</CategoryBadge></td>
+                                        <td><PriceTag>₹{sweet.price.toFixed(2)}</PriceTag></td>
+                                        <td>{sweet.quantity} units</td>
+                                        <td>
+                                            <ActionButtons>
+                                                <ActionButton className="edit-btn" onClick={() => handleEdit(sweet)}>
+                                                    ✏️ Edit
+                                                </ActionButton>
+                                                <ActionButton className="delete-btn" onClick={() => handleDelete(sweet.id)}>
+                                                    🗑️ Delete
+                                                </ActionButton>
+                                            </ActionButtons>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </SweetTable>
+                    </TableWrapper>
+                )}
+            </TableSection>
         </AdminPanelContainer>
     );
 };
