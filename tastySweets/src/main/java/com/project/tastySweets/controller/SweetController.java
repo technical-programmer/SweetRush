@@ -5,7 +5,6 @@ import com.project.tastySweets.modal.Sweet;
 import com.project.tastySweets.service.ImageService;
 import com.project.tastySweets.service.SweetService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/sweets")
-@CrossOrigin(origins = "*") // Configure properly for production
+@CrossOrigin(origins = "*")
 public class SweetController {
     private final ImageService imageService;
     private final SweetService sweetService;
@@ -29,7 +28,7 @@ public class SweetController {
 
     // Upload image and return Cloudinary URL
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/upload-image")  // ✅ REMOVED consumes parameter
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             String imageUrl = imageService.uploadImage(file);
@@ -41,7 +40,7 @@ public class SweetController {
     }
 
     // Add sweet with image upload in one request
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping  // ✅ REMOVED consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> addSweet(
             @RequestParam("name") String name,
@@ -59,7 +58,7 @@ public class SweetController {
             sweet.setCategory(category);
             sweet.setPrice(price);
             sweet.setQuantity(quantity);
-            sweet.setImageUrl(imageUrl); // Store full Cloudinary URL
+            sweet.setImageUrl(imageUrl);
 
             // Save to database
             Sweet newSweet = sweetService.addSweet(sweet);
@@ -95,7 +94,7 @@ public class SweetController {
     }
 
     // Update sweet with new image
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping("/{id}")  // ✅ REMOVED consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> updateSweet(
             @PathVariable Long id,

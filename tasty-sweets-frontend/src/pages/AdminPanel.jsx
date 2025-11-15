@@ -4,6 +4,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
+// [All your styled components remain the same - keeping them for completeness]
 const fadeIn = keyframes`
     from {
         opacity: 0;
@@ -400,6 +401,15 @@ const AdminPanel = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         
+        // 🔍 DEBUG LOGS - START
+        console.log('🔍 ===== FORM SUBMISSION DEBUG =====');
+        console.log('🔍 Form State:', formState);
+        console.log('🔍 Image File:', imageFile);
+        console.log('🔍 Token exists:', !!localStorage.getItem('token'));
+        console.log('🔍 Axios base URL:', axiosInstance.defaults.baseURL);
+        console.log('🔍 Is Update?:', !!formState.id);
+        // 🔍 DEBUG LOGS - END
+        
         try {
             if (formState.id) {
                 // UPDATE EXISTING SWEET
@@ -413,7 +423,9 @@ const AdminPanel = () => {
                     formData.append('image', imageFile);
                 }
                 
-                await axiosInstance.put(`/sweets/${formState.id}`, formData);
+                console.log('🔍 Updating sweet with ID:', formState.id);
+                const response = await axiosInstance.put(`/sweets/${formState.id}`, formData);
+                console.log('✅ Update successful:', response.data);
                 alert('Sweet updated successfully! ✅');
                 
             } else {
@@ -430,7 +442,15 @@ const AdminPanel = () => {
                 formData.append('quantity', formState.quantity);
                 formData.append('image', imageFile);
                 
-                await axiosInstance.post('/sweets', formData);
+                // 🔍 DEBUG: Log FormData contents
+                console.log('🔍 FormData contents:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
+                }
+                
+                console.log('🔍 Making POST request to: /sweets');
+                const response = await axiosInstance.post('/sweets', formData);
+                console.log('✅ POST successful:', response.data);
                 alert('Sweet added successfully! ✅');
             }
             
@@ -441,7 +461,17 @@ const AdminPanel = () => {
             fetchSweets();
             
         } catch (error) {
-            console.error('❌ Operation failed:', error);
+            // 🔍 DEBUG: Detailed error logging
+            console.error('❌ ===== ERROR DETAILS =====');
+            console.error('❌ Full error:', error);
+            console.error('❌ Error message:', error.message);
+            console.error('❌ Response status:', error.response?.status);
+            console.error('❌ Response data:', error.response?.data);
+            console.error('❌ Response headers:', error.response?.headers);
+            console.error('❌ Request URL:', error.config?.url);
+            console.error('❌ Request method:', error.config?.method);
+            console.error('❌ Request headers:', error.config?.headers);
+            
             const errorMsg = error.response?.data?.message || error.response?.data || error.message;
             alert('Operation failed! ❌\n' + errorMsg);
             
