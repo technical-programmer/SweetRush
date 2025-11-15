@@ -43,11 +43,26 @@ public class SweetController {
     @PostMapping  // ✅ REMOVED consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> addSweet(
+            jakarta.servlet.http.HttpServletRequest request,
             @RequestParam("name") String name,
             @RequestParam("category") String category,
             @RequestParam("price") double price,
             @RequestParam("quantity") int quantity,
             @RequestParam("image") MultipartFile image) {
+
+        // 🔍 DEBUG: Log all headers
+        System.out.println("=== 🔍 REQUEST DEBUG ===");
+        System.out.println("Content-Type: " + request.getContentType());
+        System.out.println("Authorization: " + request.getHeader("Authorization"));
+        System.out.println("Method: " + request.getMethod());
+        System.out.println("All Headers:");
+        java.util.Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            System.out.println("  " + headerName + ": " + request.getHeader(headerName));
+        }
+        System.out.println("=== END DEBUG ===");
+
         try {
             // Upload image to Cloudinary
             String imageUrl = imageService.uploadImage(image);
@@ -98,11 +113,19 @@ public class SweetController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> updateSweet(
             @PathVariable Long id,
+            jakarta.servlet.http.HttpServletRequest request,
             @RequestParam("name") String name,
             @RequestParam("category") String category,
             @RequestParam("price") double price,
             @RequestParam("quantity") int quantity,
             @RequestParam(value = "image", required = false) MultipartFile image) {
+
+        // 🔍 DEBUG: Log all headers
+        System.out.println("=== 🔍 UPDATE REQUEST DEBUG ===");
+        System.out.println("Content-Type: " + request.getContentType());
+        System.out.println("Authorization: " + request.getHeader("Authorization"));
+        System.out.println("=== END DEBUG ===");
+
         try {
             Sweet existingSweet = sweetService.getSweetById(id);
 
