@@ -56,8 +56,16 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Corrected path to permit access to the uploads directory
-                        .requestMatchers("/", "/api/auth/**", "/api/sweets/search", "/uploads/**").permitAll()
+                        // PUBLIC ENDPOINTS - NO AUTH REQUIRED
+                        .requestMatchers("/", "/api/auth/**", "/uploads/**").permitAll()
+
+                        // SWEETS - ALLOW ALL (POST/PUT/DELETE protected by @PreAuthorize in controller)
+                        .requestMatchers("/api/sweets", "/api/sweets/**").permitAll()
+
+                        // CART - REQUIRES AUTHENTICATION
+                        .requestMatchers("/api/cart/**").authenticated()
+
+                        // ALL OTHER REQUESTS NEED AUTHENTICATION
                         .anyRequest().authenticated()
                 );
 
@@ -65,15 +73,29 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Value("${frontend.url}")
     private String frontendUrl;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(frontendUrl));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // ALLOW ALL ORIGINS (for development) - use specific URL in production
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        // ALLOW ALL HTTP METHODS
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+
+        // ALLOW ALL HEADERS
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // EXPOSE HEADERS
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        // ALLOW CREDENTIALS
         configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
