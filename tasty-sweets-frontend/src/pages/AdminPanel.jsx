@@ -400,6 +400,12 @@ const AdminPanel = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         
+        // DEBUG: Check token and form data
+        console.log('🔍 Debug Info:');
+        console.log('Token in localStorage:', localStorage.getItem('token'));
+        console.log('Form state:', formState);
+        console.log('Image file:', imageFile);
+        
         try {
             if (formState.id) {
                 // UPDATE EXISTING SWEET
@@ -409,16 +415,13 @@ const AdminPanel = () => {
                 formData.append('price', formState.price);
                 formData.append('quantity', formState.quantity);
                 
-                // Only append image if a new one was selected
                 if (imageFile) {
                     formData.append('image', imageFile);
                 }
                 
-                await axiosInstance.put(`/sweets/${formState.id}`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
+                console.log('📤 Sending PUT request...');
+                // FIXED: Removed manual Content-Type header
+                await axiosInstance.put(`/sweets/${formState.id}`, formData);
                 alert('Sweet updated successfully! ✅');
                 
             } else {
@@ -435,25 +438,30 @@ const AdminPanel = () => {
                 formData.append('quantity', formState.quantity);
                 formData.append('image', imageFile);
                 
-                await axiosInstance.post('/sweets', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
+                console.log('📤 Sending POST request...');
+                // FIXED: Removed manual Content-Type header - axios handles it automatically
+                await axiosInstance.post('/sweets', formData);
                 alert('Sweet added successfully! ✅');
             }
             
             // Reset form
             setFormState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
             setImageFile(null);
-            // Reset file input
             document.getElementById('file-upload').value = '';
             fetchSweets();
             
         } catch (error) {
-            console.error('Operation failed:', error);
-            alert('Operation failed! ❌ ' + (error.response?.data || error.message));
+            console.error('❌ Operation failed:', error);
+            console.error('Error response:', error.response);
+            console.error('Error message:', error.message);
+            
+            // Show more detailed error message
+            const errorMsg = error.response?.data?.message || error.response?.data || error.message;
+            alert('Operation failed! ❌\n' + errorMsg);
+            
             if (error.response?.status === 401) {
+                console.error('🔒 Authentication failed - redirecting to login');
+                localStorage.removeItem('token');
                 navigate('/login');
             }
         }
@@ -461,7 +469,7 @@ const AdminPanel = () => {
 
     const handleEdit = (sweet) => {
         setFormState({ ...sweet });
-        setImageFile(null); // Clear file input when editing
+        setImageFile(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 

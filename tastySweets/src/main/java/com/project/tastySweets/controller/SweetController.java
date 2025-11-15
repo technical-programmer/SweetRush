@@ -268,7 +268,7 @@ public class SweetController {
     }
 
     @PostMapping("/{id}/restock")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<SweetDto> restockSweet(@PathVariable Long id, @RequestBody int quantity) {
         Sweet updatedSweet = sweetService.restockSweet(id, quantity);
         return ResponseEntity.ok(convertToDto(updatedSweet));
