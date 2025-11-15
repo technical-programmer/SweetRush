@@ -366,8 +366,8 @@ const PopupButton = styled.button`
 
 const SweetCard = ({ sweet, onPurchase, onAddToCart }) => {
   const [showPopup, setShowPopup] = useState(false);
-  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
-  const imageUrl = sweet.imageUrl ? `${baseUrl}${sweet.imageUrl}` : '/path/to/a-placeholder-image.png';
+  // Use imageUrl directly - it's already a complete Cloudinary URL
+  const imageUrl = sweet.imageUrl || '/placeholder-sweet.png';
 
   const handlePurchase = () => {
     if (onPurchase) {
@@ -386,7 +386,10 @@ const SweetCard = ({ sweet, onPurchase, onAddToCart }) => {
         <ImageContainer>
           <Image 
             src={imageUrl}
-            alt={sweet.name} 
+            alt={sweet.name}
+            onError={(e) => {
+              e.target.src = '/placeholder-sweet.png';
+            }}
           />
           <CategoryBadge>{sweet.category}</CategoryBadge>
           <StockBadge $inStock={sweet.quantity > 0}>

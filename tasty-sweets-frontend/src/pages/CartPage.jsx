@@ -319,7 +319,6 @@ const CartPage = () => {
     const [showPopup, setShowPopup] = useState(false);
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    const apiUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
 
     const fetchCartItems = async () => {
         setLoading(true);
@@ -367,17 +366,10 @@ const CartPage = () => {
 
     const handleCheckout = () => {
         setShowPopup(true);
-        // Optional: Clear cart after order (uncomment if needed)
-        // setTimeout(() => {
-        //     setCartItems([]);
-        //     setTotal(0);
-        // }, 2000);
     };
 
     const closePopup = () => {
         setShowPopup(false);
-        // Optional: Navigate to home or orders page
-        // navigate('/');
     };
 
     useEffect(() => {
@@ -397,7 +389,13 @@ const CartPage = () => {
                         <CartItemsList>
                             {cartItems.map(item => (
                                 <CartItem key={item.id}>
-                                    <img src={`${apiUrl}${item.sweet.imageUrl}`} alt={item.sweet.name} />
+                                    <img 
+                                        src={item.sweet.imageUrl} 
+                                        alt={item.sweet.name}
+                                        onError={(e) => {
+                                            e.target.src = '/placeholder-sweet.png';
+                                        }}
+                                    />
                                     <ItemDetails>
                                         <h4>{item.sweet.name}</h4>
                                         <span className="price">₹{item.sweet.price.toFixed(2)}</span>

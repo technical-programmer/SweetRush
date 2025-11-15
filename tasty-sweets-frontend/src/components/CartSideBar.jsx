@@ -301,8 +301,8 @@ const CartSidebar = ({ sweet, onClose }) => {
 
   if (!sweet) return null;
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
-  const imageUrl = sweet.imageUrl ? `${baseUrl}${sweet.imageUrl}` : '/path/to/a-placeholder-image.png';
+  // Use imageUrl directly - it's already a complete Cloudinary URL
+  const imageUrl = sweet.imageUrl || '/placeholder-sweet.png';
 
   const handleGoToCart = () => {
     onClose();
@@ -322,7 +322,13 @@ const CartSidebar = ({ sweet, onClose }) => {
       <SidebarContent>
         <SweetItem>
           <ItemImageWrapper>
-            <ItemImage src={imageUrl} alt={sweet.name} />
+            <ItemImage 
+              src={imageUrl} 
+              alt={sweet.name}
+              onError={(e) => {
+                e.target.src = '/placeholder-sweet.png';
+              }}
+            />
             <ItemBadge>NEW</ItemBadge>
           </ItemImageWrapper>
           

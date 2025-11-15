@@ -363,7 +363,6 @@ const AdminPanel = () => {
     const [localLoading, setLocalLoading] = useState(true);
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
 
     const fetchSweets = async () => {
         setLocalLoading(true);
@@ -401,37 +400,59 @@ const AdminPanel = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         
-        let newImageUrl = formState.imageUrl;
-
-        if (imageFile) {
-            const formData = new FormData();
-            formData.append('file', imageFile);
-            try {
-                const uploadResponse = await axiosInstance.post('/sweets/upload-image', formData);
-                newImageUrl = uploadResponse.data;
-            } catch (error) {
-                alert('Image upload failed!');
-                return;
-            }
-        }
-
-        const sweetData = { ...formState, imageUrl: newImageUrl };
-        delete sweetData.id;
-
         try {
             if (formState.id) {
-                await axiosInstance.put(`/sweets/${formState.id}`, sweetData);
+                // UPDATE EXISTING SWEET
+                const formData = new FormData();
+                formData.append('name', formState.name);
+                formData.append('category', formState.category);
+                formData.append('price', formState.price);
+                formData.append('quantity', formState.quantity);
+                
+                // Only append image if a new one was selected
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+                
+                await axiosInstance.put(`/sweets/${formState.id}`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
                 alert('Sweet updated successfully! ✅');
+                
             } else {
-                await axiosInstance.post('/sweets', sweetData);
+                // ADD NEW SWEET
+                if (!imageFile) {
+                    alert('Please select an image! 📷');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('name', formState.name);
+                formData.append('category', formState.category);
+                formData.append('price', formState.price);
+                formData.append('quantity', formState.quantity);
+                formData.append('image', imageFile);
+                
+                await axiosInstance.post('/sweets', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
                 alert('Sweet added successfully! ✅');
             }
+            
+            // Reset form
             setFormState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
             setImageFile(null);
+            // Reset file input
+            document.getElementById('file-upload').value = '';
             fetchSweets();
+            
         } catch (error) {
             console.error('Operation failed:', error);
-            alert('Operation failed! ❌');
+            alert('Operation failed! ❌ ' + (error.response?.data || error.message));
             if (error.response?.status === 401) {
                 navigate('/login');
             }
@@ -440,6 +461,7 @@ const AdminPanel = () => {
 
     const handleEdit = (sweet) => {
         setFormState({ ...sweet });
+        setImageFile(null); // Clear file input when editing
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -536,9 +558,12 @@ const AdminPanel = () => {
                             accept="image/*"
                         />
                         <FileLabel htmlFor="file-upload">
-                            {imageFile ? imageFile.name : 'Choose Image File'}
+                            {imageFile ? imageFile.name : (formState.id ? 'Change Image (Optional)' : 'Choose Image File')}
                         </FileLabel>
                         {imageFile && <FileName>✅ {imageFile.name}</FileName>}
+                        {formState.id && !imageFile && formState.imageUrl && (
+                            <FileName>Current image will be kept if not changed</FileName>
+                        )}
                     </FileInputWrapper>
                     
                     <SubmitButton type="submit">
@@ -571,7 +596,7 @@ const AdminPanel = () => {
                                     <tr key={sweet.id}>
                                         <ImageCell>
                                             <img 
-                                                src={`${baseUrl}${sweet.imageUrl}`} 
+                                                src={sweet.imageUrl}
                                                 alt={sweet.name}
                                                 onError={(e) => {
                                                     e.target.src = '/placeholder-sweet.png';
