@@ -5,6 +5,7 @@ import com.project.tastySweets.modal.Sweet;
 import com.project.tastySweets.service.ImageService;
 import com.project.tastySweets.service.SweetService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class SweetController {
 
     // Upload image and return Cloudinary URL
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @PostMapping("/upload-image")
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             String imageUrl = imageService.uploadImage(file);
@@ -40,7 +41,7 @@ public class SweetController {
     }
 
     // Add sweet with image upload in one request
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> addSweet(
             @RequestParam("name") String name,
@@ -94,7 +95,7 @@ public class SweetController {
     }
 
     // Update sweet with new image
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> updateSweet(
             @PathVariable Long id,

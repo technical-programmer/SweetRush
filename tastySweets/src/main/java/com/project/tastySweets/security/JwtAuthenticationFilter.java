@@ -8,11 +8,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collection;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -27,15 +29,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        System.out.println("🔍 JWT Filter - Request: " + request.getMethod() + " " + request.getRequestURI());
+
         String jwt = getJwtFromRequest(request);
+        System.out.println("🔍 JWT Token exists: " + (jwt != null));
 
-        if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-            String username = tokenProvider.getUsernameFromJWT(jwt);
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        if (StringUtils.hasText(jwt)) {
+            boolean isValid = tokenProvider.validateToken(jwt);
+            System.out.println("🔍 JWT Token valid: " + isValid);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (isValid) {
+                String username = tokenProvider.getUsernameFromJWT(jwt);
+                System.out.println("🔍 Username from JWT: " + username);
+
+                // ✅ GET ROLES FROM JWT TOKEN INSTEAD OF DATABASE
+                Collection<? extends GrantedAuthority> authorities = tokenProvider.getRolesFromJWT(jwt);
+                System.out.println("🔍 Authorities from JWT: " + authorities);
+
+                // Create authentication with JWT roles
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("✅ Authentication set in SecurityContext");
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -43,6 +62,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
+        System.out.println("🔍 Authorization header: " + (bearerToken != null ? "Bearer ..." : "null"));
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }

@@ -400,12 +400,6 @@ const AdminPanel = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         
-        // DEBUG: Check token and form data
-        console.log('🔍 Debug Info:');
-        console.log('Token in localStorage:', localStorage.getItem('token'));
-        console.log('Form state:', formState);
-        console.log('Image file:', imageFile);
-        
         try {
             if (formState.id) {
                 // UPDATE EXISTING SWEET
@@ -419,8 +413,6 @@ const AdminPanel = () => {
                     formData.append('image', imageFile);
                 }
                 
-                console.log('📤 Sending PUT request...');
-                // FIXED: Removed manual Content-Type header
                 await axiosInstance.put(`/sweets/${formState.id}`, formData);
                 alert('Sweet updated successfully! ✅');
                 
@@ -438,8 +430,6 @@ const AdminPanel = () => {
                 formData.append('quantity', formState.quantity);
                 formData.append('image', imageFile);
                 
-                console.log('📤 Sending POST request...');
-                // FIXED: Removed manual Content-Type header - axios handles it automatically
                 await axiosInstance.post('/sweets', formData);
                 alert('Sweet added successfully! ✅');
             }
@@ -452,15 +442,10 @@ const AdminPanel = () => {
             
         } catch (error) {
             console.error('❌ Operation failed:', error);
-            console.error('Error response:', error.response);
-            console.error('Error message:', error.message);
-            
-            // Show more detailed error message
             const errorMsg = error.response?.data?.message || error.response?.data || error.message;
             alert('Operation failed! ❌\n' + errorMsg);
             
             if (error.response?.status === 401) {
-                console.error('🔒 Authentication failed - redirecting to login');
                 localStorage.removeItem('token');
                 navigate('/login');
             }

@@ -3,6 +3,7 @@ package com.project.tastySweets.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -56,11 +57,15 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC ENDPOINTS - NO AUTH REQUIRED
-                        .requestMatchers("/", "/api/auth/**", "/uploads/**").permitAll()
+                        // PUBLIC ENDPOINTS - NO AUTH REQUIRED (ORDER MATTERS!)
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/", "/uploads/**").permitAll()
 
-                        // SWEETS - ALLOW ALL (POST/PUT/DELETE protected by @PreAuthorize in controller)
-                        .requestMatchers("/api/sweets", "/api/sweets/**").permitAll()
+                        // SWEETS - GET is public, POST/PUT/DELETE require authentication
+                        .requestMatchers(HttpMethod.GET, "/api/sweets/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/sweets/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/sweets/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/sweets/**").authenticated()
 
                         // CART - REQUIRES AUTHENTICATION
                         .requestMatchers("/api/cart/**").authenticated()
