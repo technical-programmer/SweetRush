@@ -12,11 +12,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/sweets")
-@CrossOrigin(origins = "*")
+
 public class SweetController {
     private final ImageService imageService;
     private final SweetService sweetService;
@@ -27,45 +28,35 @@ public class SweetController {
     }
 
     // Upload image and return Cloudinary URL
+    @PostMapping("/upload-image")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @PostMapping("/upload-image")  // ✅ REMOVED consumes parameter
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             String imageUrl = imageService.uploadImage(file);
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to upload image: " + e.getMessage());
+                    .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
         }
     }
 
-    // Add sweet with image upload in one request
-    @PostMapping  // ✅ REMOVED consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    
+    @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> addSweet(
-            jakarta.servlet.http.HttpServletRequest request,
             @RequestParam("name") String name,
             @RequestParam("category") String category,
             @RequestParam("price") double price,
             @RequestParam("quantity") int quantity,
             @RequestParam("image") MultipartFile image) {
 
-        // 🔍 DEBUG: Log all headers
-        System.out.println("=== 🔍 REQUEST DEBUG ===");
-        System.out.println("Content-Type: " + request.getContentType());
-        System.out.println("Authorization: " + request.getHeader("Authorization"));
-        System.out.println("Method: " + request.getMethod());
-        System.out.println("All Headers:");
-        java.util.Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            System.out.println("  " + headerName + ": " + request.getHeader(headerName));
-        }
-        System.out.println("=== END DEBUG ===");
-
         try {
+            System.out.println("🔍 Adding sweet: " + name);
+            System.out.println("🔍 Image: " + image.getOriginalFilename() + " (" + image.getSize() + " bytes)");
+
             // Upload image to Cloudinary
             String imageUrl = imageService.uploadImage(image);
+            System.out.println("✅ Image uploaded: " + imageUrl);
 
             // Create sweet object
             Sweet sweet = new Sweet();
@@ -77,11 +68,20 @@ public class SweetController {
 
             // Save to database
             Sweet newSweet = sweetService.addSweet(sweet);
+            System.out.println("✅ Sweet saved with ID: " + newSweet.getId());
+
             return new ResponseEntity<>(convertToDto(newSweet), HttpStatus.CREATED);
 
         } catch (IOException e) {
+            System.err.println("❌ Upload error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to add sweet: " + e.getMessage());
+                    .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to add sweet: " + e.getMessage()));
         }
     }
 
@@ -109,34 +109,30 @@ public class SweetController {
     }
 
     // Update sweet with new image
-    @PutMapping("/{id}")  // ✅ REMOVED consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> updateSweet(
             @PathVariable Long id,
-            jakarta.servlet.http.HttpServletRequest request,
             @RequestParam("name") String name,
             @RequestParam("category") String category,
             @RequestParam("price") double price,
             @RequestParam("quantity") int quantity,
             @RequestParam(value = "image", required = false) MultipartFile image) {
 
-        // 🔍 DEBUG: Log all headers
-        System.out.println("=== 🔍 UPDATE REQUEST DEBUG ===");
-        System.out.println("Content-Type: " + request.getContentType());
-        System.out.println("Authorization: " + request.getHeader("Authorization"));
-        System.out.println("=== END DEBUG ===");
-
         try {
             Sweet existingSweet = sweetService.getSweetById(id);
 
             // If new image is provided, upload it and delete old one
             if (image != null && !image.isEmpty()) {
+                System.out.println("🔍 Updating image for sweet ID: " + id);
+
                 // Delete old image from Cloudinary
                 imageService.deleteImage(existingSweet.getImageUrl());
 
                 // Upload new image
                 String newImageUrl = imageService.uploadImage(image);
                 existingSweet.setImageUrl(newImageUrl);
+                System.out.println("✅ New image uploaded: " + newImageUrl);
             }
 
             // Update other fields
@@ -146,11 +142,20 @@ public class SweetController {
             existingSweet.setQuantity(quantity);
 
             Sweet updatedSweet = sweetService.updateSweet(id, existingSweet);
+            System.out.println("✅ Sweet updated successfully");
+
             return ResponseEntity.ok(convertToDto(updatedSweet));
 
         } catch (IOException e) {
+            System.err.println("❌ Update error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to update sweet: " + e.getMessage());
+                    .body(Map.of("error", "Failed to update sweet: " + e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -176,8 +181,9 @@ public class SweetController {
 
             return ResponseEntity.noContent().build();
         } catch (IOException e) {
+            System.err.println("❌ Delete error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to delete sweet: " + e.getMessage());
+                    .body(Map.of("error", "Failed to delete sweet: " + e.getMessage()));
         }
     }
 
