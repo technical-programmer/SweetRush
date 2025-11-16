@@ -43,18 +43,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
                 System.out.println("🔍 Username from JWT: " + username);
 
-                // ✅ GET ROLES FROM JWT TOKEN INSTEAD OF DATABASE
-                Collection<? extends GrantedAuthority> authorities = tokenProvider.getRolesFromJWT(jwt);
+                // ✅ FIXED: Changed getRolesFromJWT to getAuthoritiesFromJWT
+                Collection<? extends GrantedAuthority> authorities = tokenProvider.getAuthoritiesFromJWT(jwt);
                 System.out.println("🔍 Authorities from JWT: " + authorities);
 
-                // Create authentication with JWT roles
+                // Create authentication with JWT authorities
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("✅ Authentication set in SecurityContext");
+                System.out.println("✅ Authentication set in SecurityContext with authorities: " + authorities);
             }
+        } else {
+            System.out.println("⚠️  No JWT token found in request");
         }
 
         filterChain.doFilter(request, response);

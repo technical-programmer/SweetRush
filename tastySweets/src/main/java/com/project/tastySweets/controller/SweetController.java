@@ -40,7 +40,7 @@ public class SweetController {
         }
     }
 
-    
+
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<?> addSweet(

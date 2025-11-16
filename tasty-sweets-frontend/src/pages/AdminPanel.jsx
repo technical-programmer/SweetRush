@@ -4,7 +4,6 @@ import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-// [All your styled components remain the same - keeping them for completeness]
 const fadeIn = keyframes`
     from {
         opacity: 0;
@@ -175,6 +174,12 @@ const SubmitButton = styled.button`
     &:active {
         transform: translateY(0);
     }
+    
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
 `;
 
 const TableSection = styled.div`
@@ -304,6 +309,12 @@ const ActionButton = styled.button`
     &:active {
         transform: translateY(0);
     }
+    
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
 `;
 
 const PriceTag = styled.span`
@@ -359,9 +370,17 @@ const EmptyState = styled.div`
 
 const AdminPanel = () => {
     const [sweets, setSweets] = useState([]);
-    const [formState, setFormState] = useState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
+    const [formState, setFormState] = useState({ 
+        id: null, 
+        name: '', 
+        category: '', 
+        price: '', 
+        quantity: '', 
+        imageUrl: '' 
+    });
     const [imageFile, setImageFile] = useState(null);
     const [localLoading, setLocalLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
 
@@ -371,8 +390,8 @@ const AdminPanel = () => {
             const response = await axiosInstance.get('/sweets');
             setSweets(response.data);
         } catch (error) {
-            console.error('Failed to fetch sweets', error);
             if (error.response?.status === 401) {
+                alert('Session expired. Please log in again.');
                 navigate('/login');
             }
         } finally {
@@ -400,19 +419,10 @@ const AdminPanel = () => {
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        
-        // 🔍 DEBUG LOGS - START
-        console.log('🔍 ===== FORM SUBMISSION DEBUG =====');
-        console.log('🔍 Form State:', formState);
-        console.log('🔍 Image File:', imageFile);
-        console.log('🔍 Token exists:', !!localStorage.getItem('token'));
-        console.log('🔍 Axios base URL:', axiosInstance.defaults.baseURL);
-        console.log('🔍 Is Update?:', !!formState.id);
-        // 🔍 DEBUG LOGS - END
+        setIsSubmitting(true);
         
         try {
             if (formState.id) {
-                // UPDATE EXISTING SWEET
                 const formData = new FormData();
                 formData.append('name', formState.name);
                 formData.append('category', formState.category);
@@ -423,15 +433,13 @@ const AdminPanel = () => {
                     formData.append('image', imageFile);
                 }
                 
-                console.log('🔍 Updating sweet with ID:', formState.id);
-                const response = await axiosInstance.put(`/sweets/${formState.id}`, formData);
-                console.log('✅ Update successful:', response.data);
-                alert('Sweet updated successfully! ✅');
+                await axiosInstance.put(`/sweets/${formState.id}`, formData);
+                alert('✅ Sweet updated successfully!');
                 
             } else {
-                // ADD NEW SWEET
                 if (!imageFile) {
-                    alert('Please select an image! 📷');
+                    alert('⚠️ Please select an image!');
+                    setIsSubmitting(false);
                     return;
                 }
                 
@@ -442,43 +450,29 @@ const AdminPanel = () => {
                 formData.append('quantity', formState.quantity);
                 formData.append('image', imageFile);
                 
-                // 🔍 DEBUG: Log FormData contents
-                console.log('🔍 FormData contents:');
-                for (let [key, value] of formData.entries()) {
-                    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
-                }
-                
-                console.log('🔍 Making POST request to: /sweets');
-                const response = await axiosInstance.post('/sweets', formData);
-                console.log('✅ POST successful:', response.data);
-                alert('Sweet added successfully! ✅');
+                await axiosInstance.post('/sweets', formData);
+                alert('✅ Sweet added successfully!');
             }
             
-            // Reset form
             setFormState({ id: null, name: '', category: '', price: '', quantity: '', imageUrl: '' });
             setImageFile(null);
-            document.getElementById('file-upload').value = '';
-            fetchSweets();
+            const fileInput = document.getElementById('file-upload');
+            if (fileInput) fileInput.value = '';
+            
+            await fetchSweets();
             
         } catch (error) {
-            // 🔍 DEBUG: Detailed error logging
-            console.error('❌ ===== ERROR DETAILS =====');
-            console.error('❌ Full error:', error);
-            console.error('❌ Error message:', error.message);
-            console.error('❌ Response status:', error.response?.status);
-            console.error('❌ Response data:', error.response?.data);
-            console.error('❌ Response headers:', error.response?.headers);
-            console.error('❌ Request URL:', error.config?.url);
-            console.error('❌ Request method:', error.config?.method);
-            console.error('❌ Request headers:', error.config?.headers);
-            
-            const errorMsg = error.response?.data?.message || error.response?.data || error.message;
-            alert('Operation failed! ❌\n' + errorMsg);
-            
             if (error.response?.status === 401) {
-                localStorage.removeItem('token');
+                alert('⚠️ Session expired. Please log in again.');
                 navigate('/login');
+            } else if (error.response?.status === 403) {
+                alert('⚠️ You do not have permission to perform this action.');
+            } else {
+                const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
+                alert(`❌ Operation failed!\n\n${errorMsg}`);
             }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -489,17 +483,35 @@ const AdminPanel = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this sweet? 🗑️')) {
-            try {
-                await axiosInstance.delete(`/sweets/${id}`);
-                alert('Sweet deleted successfully! ✅');
-                fetchSweets();
-            } catch (error) {
-                console.error('Delete failed:', error);
-                alert('Delete failed! ❌');
-                if (error.response?.status === 401) {
-                    navigate('/login');
-                }
+        if (!window.confirm('Are you sure you want to delete this sweet? 🗑️\n\nThis action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            await axiosInstance.delete(`/sweets/${id}`);
+            
+            alert('✅ Sweet deleted successfully!');
+            
+            await fetchSweets();
+            
+        } catch (error) {
+            if (error.response?.status === 401) {
+                alert('⚠️ Session expired. Please log in again.');
+                navigate('/login');
+            } else if (error.response?.status === 403) {
+                alert('⚠️ You do not have permission to delete sweets.');
+            } else if (error.response?.status === 409 || 
+                       error.response?.data?.error?.includes('foreign key') ||
+                       error.response?.data?.error?.includes('cart')) {
+                alert('⚠️ Cannot delete this sweet!\n\n' +
+                      'This sweet is currently in one or more shopping carts.\n' +
+                      'Users must remove it from their carts before you can delete it.');
+            } else if (error.response?.status === 404) {
+                alert('⚠️ Sweet not found. It may have already been deleted.');
+                await fetchSweets();
+            } else {
+                const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
+                alert(`❌ Delete failed!\n\n${errorMsg}`);
             }
         }
     };
@@ -531,6 +543,7 @@ const AdminPanel = () => {
                             value={formState.name} 
                             onChange={handleFormChange} 
                             required 
+                            disabled={isSubmitting}
                         />
                     </InputGroup>
                     
@@ -543,6 +556,7 @@ const AdminPanel = () => {
                             value={formState.category} 
                             onChange={handleFormChange} 
                             required 
+                            disabled={isSubmitting}
                         />
                     </InputGroup>
                     
@@ -557,6 +571,7 @@ const AdminPanel = () => {
                             required 
                             min="0"
                             step="0.01"
+                            disabled={isSubmitting}
                         />
                     </InputGroup>
                     
@@ -570,6 +585,7 @@ const AdminPanel = () => {
                             onChange={handleFormChange} 
                             required 
                             min="0"
+                            disabled={isSubmitting}
                         />
                     </InputGroup>
                     
@@ -579,6 +595,7 @@ const AdminPanel = () => {
                             id="file-upload"
                             onChange={handleFileChange}
                             accept="image/*"
+                            disabled={isSubmitting}
                         />
                         <FileLabel htmlFor="file-upload">
                             {imageFile ? imageFile.name : (formState.id ? 'Change Image (Optional)' : 'Choose Image File')}
@@ -589,8 +606,8 @@ const AdminPanel = () => {
                         )}
                     </FileInputWrapper>
                     
-                    <SubmitButton type="submit">
-                        {formState.id ? '✏️ Update Sweet' : '➕ Add Sweet'}
+                    <SubmitButton type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? '⏳ Processing...' : (formState.id ? '✏️ Update Sweet' : '➕ Add Sweet')}
                     </SubmitButton>
                 </Form>
             </FormSection>
@@ -622,7 +639,7 @@ const AdminPanel = () => {
                                                 src={sweet.imageUrl}
                                                 alt={sweet.name}
                                                 onError={(e) => {
-                                                    e.target.src = '/placeholder-sweet.png';
+                                                    e.target.src = 'https://via.placeholder.com/80?text=No+Image';
                                                 }}
                                             />
                                         </ImageCell>
@@ -632,10 +649,18 @@ const AdminPanel = () => {
                                         <td>{sweet.quantity} units</td>
                                         <td>
                                             <ActionButtons>
-                                                <ActionButton className="edit-btn" onClick={() => handleEdit(sweet)}>
+                                                <ActionButton 
+                                                    className="edit-btn" 
+                                                    onClick={() => handleEdit(sweet)}
+                                                    disabled={isSubmitting}
+                                                >
                                                     ✏️ Edit
                                                 </ActionButton>
-                                                <ActionButton className="delete-btn" onClick={() => handleDelete(sweet.id)}>
+                                                <ActionButton 
+                                                    className="delete-btn" 
+                                                    onClick={() => handleDelete(sweet.id)}
+                                                    disabled={isSubmitting}
+                                                >
                                                     🗑️ Delete
                                                 </ActionButton>
                                             </ActionButtons>

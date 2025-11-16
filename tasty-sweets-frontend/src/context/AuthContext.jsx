@@ -17,16 +17,18 @@ export const AuthProvider = ({ children, axiosInstance }) => {
         }
         try {
             const decodedToken = jwtDecode(token);
-            const userRole = decodedToken.role; // 👈 Correctly get the role as a single string
+            
+            const authorities = decodedToken.authorities || [];
+            const isAdmin = authorities.includes('ROLE_ADMIN');
             
             setUser({
                 username: decodedToken.sub,
-                role: userRole,
+                authorities: authorities,
+                role: authorities[0] || null,
                 isAuthenticated: true,
-                isAdmin: userRole === 'ROLE_ADMIN' // 👈 Correctly check the role string
+                isAdmin: isAdmin
             });
         } catch (error) {
-            console.error("Invalid token:", error);
             localStorage.removeItem('token');
             setUser(null);
         }
@@ -47,14 +49,18 @@ export const AuthProvider = ({ children, axiosInstance }) => {
             localStorage.setItem('token', token);
             
             const decodedToken = jwtDecode(token);
-            const userRole = decodedToken.role; // 👈 Correctly get the role as a single string
+            
+            const authorities = decodedToken.authorities || [];
+            const isAdmin = authorities.includes('ROLE_ADMIN');
 
             const newUser = {
                 username: decodedToken.sub,
-                role: userRole,
+                authorities: authorities,
+                role: authorities[0] || null,
                 isAuthenticated: true,
-                isAdmin: userRole === 'ROLE_ADMIN' // 👈 Correctly check the role string
+                isAdmin: isAdmin
             };
+            
             setUser(newUser);
             
             if (newUser.isAdmin) {
@@ -64,7 +70,6 @@ export const AuthProvider = ({ children, axiosInstance }) => {
             }
 
         } catch (error) {
-            console.error("Login failed:", error);
             throw error;
         }
     };

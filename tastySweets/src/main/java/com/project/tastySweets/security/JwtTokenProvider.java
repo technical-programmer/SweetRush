@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -23,19 +24,21 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration-in-ms}")
     private int jwtExpirationInMs;
 
-    // Generates a JWT with claims including the user's role
+    // Generates a JWT with claims including the user's authorities
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
-        String roles = authentication.getAuthorities().stream()
+
+        // ✅ FIXED: Store as List of authorities, not comma-separated string
+        List<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.toList());
 
         Date currentDate = new Date();
         Date expireDate = new Date(currentDate.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .setSubject(username)
-                .claim("role", roles) // Add the roles claim
+                .claim("authorities", authorities) // ✅ FIXED: Changed "role" to "authorities"
                 .setIssuedAt(currentDate)
                 .setExpiration(expireDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
@@ -51,15 +54,22 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
-    // Extracts the user's roles from the token
-    public Collection<? extends GrantedAuthority> getRolesFromJWT(String token) {
+    // ✅ FIXED: Extracts the user's authorities from the token
+    public Collection<? extends GrantedAuthority> getAuthoritiesFromJWT(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
                 .getBody();
 
-        String rolesString = (String) claims.get("role");
-        return Arrays.stream(rolesString.split(","))
+        // ✅ FIXED: Get authorities as List instead of comma-separated string
+        @SuppressWarnings("unchecked")
+        List<String> authorities = (List<String>) claims.get("authorities");
+
+        if (authorities == null || authorities.isEmpty()) {
+            return Arrays.asList(); // Return empty list if no authorities
+        }
+
+        return authorities.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
@@ -70,15 +80,15 @@ public class JwtTokenProvider {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
             return true;
         } catch (SignatureException ex) {
-            // Invalid JWT signature
+            System.err.println("Invalid JWT signature: " + ex.getMessage());
         } catch (MalformedJwtException ex) {
-            // Invalid JWT token
+            System.err.println("Invalid JWT token: " + ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            // Expired JWT token
+            System.err.println("Expired JWT token: " + ex.getMessage());
         } catch (UnsupportedJwtException ex) {
-            // Unsupported JWT token
+            System.err.println("Unsupported JWT token: " + ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            // JWT claims string is empty
+            System.err.println("JWT claims string is empty: " + ex.getMessage());
         }
         return false;
     }

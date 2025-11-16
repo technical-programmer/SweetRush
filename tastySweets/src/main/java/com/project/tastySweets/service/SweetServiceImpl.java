@@ -70,7 +70,7 @@
 //    }
 //}
 
-package com.project.tastySweets.service.impl;
+package com.project.tastySweets.service;
 
 import com.project.tastySweets.modal.Sweet;
 import com.project.tastySweets.repository.SweetRepository;
